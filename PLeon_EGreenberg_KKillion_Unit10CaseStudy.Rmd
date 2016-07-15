@@ -1,0 +1,194 @@
+---
+title: "Chulwalhar Export Forecast -Unit10CaseStudy"
+author: "Paola Leon, Eyal Greenberg and Kyle Killion"
+date: "July 11, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The prime minister of Chulwalhar has asked us to help him in forecasting exports from his country. In order to do this we have been given as-is data, which is the original or observed data, and planned data, which is what Chulwalhar would like to export. We also have a list of indicators that may affect exports. Our job is to find out the best way to forecast Chulwalhar’s exports in 2014 based on data collected before this year. In other words, we want to create a credible statistical model.
+
+The export data for Chulwalhar are in two CSV files. One contains the as-is data and the other one contains the planned data. These data sets are also composed of other data sets: monthly and yearly for both groups. Your task is to take all of these data sets, import them into R, and develop a model to forecast the exports of these particular products for the prime minister of Chulwalhar.
+
+Original data sources can be found in the link below:
+
+https://s3-us-west-2.amazonaws.com/smu-mds/prod/MSDS+6306+Doing+Data+Science/Week+10/ChulwalarCase.zip
+
+
+
+##Instructions
+1. Submit an R markdown document with the code necessary to download, clean and analyze the data. 
+2. Interpretations of the code and analysis should be provided. 
+3. There should also be at least one graphic that explains an important feature of the data.
+4. This graphic should be interpreted in the text of the document.
+
+
+## Recording the session info
+```{r}
+sessionInfo()
+```
+
+## Set the working directory
+```{r}
+setwd("/Users/paolaleon/Desktop/MSDS 6303 Doing Data Science/Unit10CaseStudy")
+getwd()
+```
+
+##Download datasources.
+1. Manually clicked in the link above and downloaded a .zip file name **ChulwalarCase.zip**
+2. Manually unzipped the file and placed its contents under the working directory (in our local machine).
+3. Using R, accessed the .csv files as follows:
+
+```{r}
+list.files()
+rawImportedAsIsDataChulwalar <- read.csv("ImportedAsIsDataChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=FALSE)
+rawImportedPlanDataChulwalar <- read.csv("ImportedPlanDataChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=FALSE)
+rawImportedIndicatorsChulwalar <- read.csv("ImportedIndicatorsChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=FALSE)
+```
+
+##Analysis of raw data
+1. General description of the dataframes: number of observations, number of variables, datatypes, and existance of NAs.
+```{r}
+str(rawImportedAsIsDataChulwalar)
+str(rawImportedPlanDataChulwalar)
+str(rawImportedIndicatorsChulwalar)
+```
+
+2. A snapshot of the dataframes: top six rows
+```{r}
+head(rawImportedAsIsDataChulwalar)
+head(rawImportedPlanDataChulwalar)
+head(rawImportedIndicatorsChulwalar)
+```
+
+3. A snapshot of the dataframes: last six rows
+```{r}
+tail(rawImportedAsIsDataChulwalar)
+tail(rawImportedPlanDataChulwalar)
+tail(rawImportedIndicatorsChulwalar)
+```
+
+4. Identify the column headers:
+```{r}
+names(rawImportedAsIsDataChulwalar)
+names(rawImportedPlanDataChulwalar)
+names(rawImportedIndicatorsChulwalar)
+```
+
+5. Identify the dimensions of the dataframes (number of observations and variables):
+```{r}
+dim(rawImportedAsIsDataChulwalar)
+dim(rawImportedPlanDataChulwalar)
+dim(rawImportedIndicatorsChulwalar)
+```
+
+6. Calculate dataframe summaries for both continuos(numeric) and categorical fields:
+```{r}
+summary(rawImportedAsIsDataChulwalar)
+summary(rawImportedPlanDataChulwalar)
+summary(rawImportedIndicatorsChulwalar)
+```
+
+##Tidyng Data
+1. Create new dataframes for tyding data so that raw data stays untouched.
+```{r}
+tidyImportedAsIsDataChulwalar <- rawImportedAsIsDataChulwalar
+tidyImportedPlanDataChulwalar <- rawImportedPlanDataChulwalar
+tidyImportedIndicatorsChulwalar <- rawImportedIndicatorsChulwalar
+```
+
+2. Rename the variables to meaninful labels
+```{r}
+names(tidyImportedAsIsDataChulwalar) <- c("TotalAsIs", "2008","2009","2010","2011","2012","2013","2014")
+names(tidyImportedPlanDataChulwalar) <- c("TotalPlan", "2008","2009","2010","2011","2012","2013","2014")
+names(tidyImportedIndicatorsChulwalar) <- c("ChangeExportPrices", "2008","2009","2010","2011","2012","2013","2014")
+```
+
+3. Verify dataframe structure
+```{r}
+str(tidyImportedAsIsDataChulwalar)
+str(tidyImportedPlanDataChulwalar)
+str(tidyImportedIndicatorsChulwalar)
+```
+
+4. Select only valid rows
+```{r}
+tidyImportedAsIsDataChulwalar <- tidyImportedAsIsDataChulwalar[2:98,]
+tidyImportedPlanDataChulwalar <- tidyImportedPlanDataChulwalar[2:97,]
+tidyImportedIndicatorsChulwalar <- tidyImportedIndicatorsChulwalar[2:195,]
+```
+
+5. Verify. Notice the NA's!
+```{r}
+str(tidyImportedAsIsDataChulwalar)
+str(tidyImportedPlanDataChulwalar)
+str(tidyImportedIndicatorsChulwalar)
+head(tidyImportedAsIsDataChulwalar)
+head(tidyImportedPlanDataChulwalar)
+head(tidyImportedIndicatorsChulwalar)
+summary(tidyImportedAsIsDataChulwalar)
+summary(tidyImportedPlanDataChulwalar)
+summary(tidyImportedIndicatorsChulwalar)
+```
+
+##Time Series Data
+1. Focus on Total Yearly Exports: Something looks wrong with TotalYearlyExportsAsIs.
+2. Discard Year 2014 as there is not Data (NA)
+```{r}
+tidyImportedAsIsDataChulwalar
+TotalYearlyExports <- tidyImportedAsIsDataChulwalar[85:96,]
+TotalYearlyExports <- TotalYearlyExports[c(2:7)]
+TotalYearlyExports
+TotalYearlyExports_vector <- c(26280011, 29609916, 32726772, 37215503, 40629676, 45408410)
+TotalYearlyExports_vector
+```
+
+2. Create a timeseries datatype
+
+install.packages("fpp", repos="http://cran.us.r-project.org",dependencies=TRUE)
+
+library(fpp)
+
+```{r}
+TotalYearlyExports_ts <- ts(TotalYearlyExports_vector, start=c(2008), end=c(2013), frequency=12)
+TotalYearlyExports_ts
+plot.ts(TotalYearlyExports_ts)
+```
+
+3. We can notice the fluctuations over time are constant showing a definite seasonality. As a secondary reference we can transform the time series by calculating the natural log of the original data:
+```{r}
+logTotalYearlyExports_ts <- log(TotalYearlyExports_ts)
+plot.ts(logTotalYearlyExports_ts)
+```
+
+##Decomposition
+"Decomposing a time series means separating it into its constituent components, which are usually a trend component and an irregular component, and if it is a seasonal time series, a seasonal component."
+https://a-little-book-of-r-for-time-series.readthedocs.io/en/latest/src/timeseries.html
+
+1. The next steps will be to use a basic decomposition to observe the trend cycle and seasonality of the data
+```{r}
+decompose_TotalYearlyExports_ts <- decompose(TotalYearlyExports_ts)
+plot(decompose_TotalYearlyExports_ts)
+```
+
+2. Observe the estimated values: The largest seasonal factor seems to occur aproximately every six months (June and Dec 10096695)
+```{r}
+decompose_TotalYearlyExports_ts$seasonal
+```
+
+##Correlation of Imported Indicators
+See if the results above support the imported indicators
+```{r}
+ChangeExportPrices <- tidyImportedIndicatorsChulwalar[1:12,]
+ChangeExportPrices <- ChangeExportPrices[c(2:7)]
+ChangeExportPrices
+ChangeExportPrices_ts <- ts(ChangeExportPrices, start=c(2008), end=c(2013), frequency=12)
+ChangeExportPrices_ts
+plot.ts(ChangeExportPrices_ts)
+```
+
