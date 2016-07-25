@@ -171,14 +171,17 @@ getwd()</code></pre>
 <li>Using R, accessed the .csv files as follows:</li>
 </ol>
 <pre class="r"><code>list.files()</code></pre>
-<pre><code>## [1] &quot;ChulwalarCase.zip&quot;                             
-## [2] &quot;Forecasting Exports Chulwalar_0.8a.R&quot;          
-## [3] &quot;ImportedAsIsDataChulwalar.csv&quot;                 
-## [4] &quot;ImportedIndicatorsChulwalar.csv&quot;               
-## [5] &quot;ImportedPlanDataChulwalar.csv&quot;                 
-## [6] &quot;Instructions.txt&quot;                              
-## [7] &quot;PLeon_EGreenberg_KKillion_Unit10CaseStudy.html&quot;
-## [8] &quot;PLeon_EGreenberg_KKillion_Unit10CaseStudy.Rmd&quot;</code></pre>
+<pre><code>##  [1] &quot;ChulwalarCase.zip&quot;                                     
+##  [2] &quot;Chulwalhar Export Forecast -Unit10CaseStudy_html_files&quot;
+##  [3] &quot;Chulwalhar Export Forecast -Unit10CaseStudy_html.html&quot; 
+##  [4] &quot;Chulwalhar Export Forecast -Unit10CaseStudy.pdf&quot;       
+##  [5] &quot;Forecasting Exports Chulwalar_0.8a.R&quot;                  
+##  [6] &quot;ImportedAsIsDataChulwalar.csv&quot;                         
+##  [7] &quot;ImportedIndicatorsChulwalar.csv&quot;                       
+##  [8] &quot;ImportedPlanDataChulwalar.csv&quot;                         
+##  [9] &quot;Instructions.txt&quot;                                      
+## [10] &quot;PLeon_EGreenberg_KKillion_Unit10CaseStudy.html&quot;        
+## [11] &quot;PLeon_EGreenberg_KKillion_Unit10CaseStudy.Rmd&quot;</code></pre>
 <pre class="r"><code>rawImportedAsIsDataChulwalar &lt;- read.csv(&quot;ImportedAsIsDataChulwalar.csv&quot;, sep = &quot;;&quot;, stringsAsFactors=FALSE, header=TRUE)
 rawImportedPlanDataChulwalar &lt;- read.csv(&quot;ImportedPlanDataChulwalar.csv&quot;, sep = &quot;;&quot;, stringsAsFactors=FALSE, header=TRUE)
 rawImportedIndicatorsChulwalar &lt;- read.csv(&quot;ImportedIndicatorsChulwalar.csv&quot;, sep = &quot;;&quot;, stringsAsFactors=FALSE, header=TRUE)</code></pre>
@@ -734,7 +737,7 @@ ChangeExportPrices</code></pre>
 <pre class="r"><code>install.packages(&quot;forecast&quot;, repos=&quot;http://cran.us.r-project.org&quot;,dependencies=TRUE)</code></pre>
 <pre><code>## 
 ## The downloaded binary packages are in
-##  /var/folders/dg/wtvtq1m96q9cc_33_fpwv9d40000gn/T//RtmpWHNaBb/downloaded_packages</code></pre>
+##  /var/folders/dg/wtvtq1m96q9cc_33_fpwv9d40000gn/T//RtmpgZfAt8/downloaded_packages</code></pre>
 <pre class="r"><code>library(forecast)</code></pre>
 <pre><code>## Warning: package 'forecast' was built under R version 3.2.5</code></pre>
 <pre><code>## Loading required package: zoo</code></pre>
@@ -1432,6 +1435,11 @@ lines(fitted(fit2), col=&quot;red&quot;)</code></pre>
 ## 
 ##       AIC      AICc       BIC 
 ## -1926.392 -1914.028 -1892.618</code></pre>
+<hr />
+<p><strong>Additional Anaylisis</strong></p>
+<hr />
+<p>After conducting and observing a birds eye view of Total yearly Exports, we dive into a more specific analysis under the Wuge Flower and investigate Planned versus Actual. As well as, introducing the National Holiday Indicator to account for the cultural aspect.</p>
+<p>Further analysis on this case can be found on <a href="https://github.com/kkillion43/Unit10CaseStudy2" class="uri">https://github.com/kkillion43/Unit10CaseStudy2</a></p>
 <p><em>R Data Science Essentials, Ravindran Sharan Kumar, Raja B. Koushik, Packt Publishing, January 2016</em></p>
 </div>
 

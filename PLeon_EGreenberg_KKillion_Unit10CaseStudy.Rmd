@@ -468,6 +468,8 @@ fit2$model
 **Additional Anaylisis**
 
 ******************************************
+After conducting and observing a birds eye view of Total yearly Exports, we dive into a more specific analysis under the Wuge Flower and investigate Planned versus Actual. As well as, introducing the National Holiday Indicator to account for the cultural aspect.
+
 Further analysis on this case can be found on https://github.com/kkillion43/Unit10CaseStudy2
 
 
