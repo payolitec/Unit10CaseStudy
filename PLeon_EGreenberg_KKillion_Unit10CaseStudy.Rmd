@@ -46,9 +46,9 @@ getwd()
 
 ```{r}
 list.files()
-rawImportedAsIsDataChulwalar <- read.csv("ImportedAsIsDataChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=FALSE)
-rawImportedPlanDataChulwalar <- read.csv("ImportedPlanDataChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=FALSE)
-rawImportedIndicatorsChulwalar <- read.csv("ImportedIndicatorsChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=FALSE)
+rawImportedAsIsDataChulwalar <- read.csv("ImportedAsIsDataChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=TRUE)
+rawImportedPlanDataChulwalar <- read.csv("ImportedPlanDataChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=TRUE)
+rawImportedIndicatorsChulwalar <- read.csv("ImportedIndicatorsChulwalar.csv", sep = ";", stringsAsFactors=FALSE, header=TRUE)
 ```
 
 ##Analysis of raw data
@@ -109,31 +109,11 @@ names(tidyImportedPlanDataChulwalar) <- c("TotalPlan", "2008","2009","2010","201
 names(tidyImportedIndicatorsChulwalar) <- c("ChangeExportPrices", "2008","2009","2010","2011","2012","2013","2014")
 ```
 
-3. Verify dataframe structure
+3. Verify dataframe structure. Notice the NA's!
 ```{r}
 str(tidyImportedAsIsDataChulwalar)
 str(tidyImportedPlanDataChulwalar)
 str(tidyImportedIndicatorsChulwalar)
-```
-
-4. Select only valid rows
-```{r}
-tidyImportedAsIsDataChulwalar <- tidyImportedAsIsDataChulwalar[2:98,]
-tidyImportedPlanDataChulwalar <- tidyImportedPlanDataChulwalar[2:97,]
-tidyImportedIndicatorsChulwalar <- tidyImportedIndicatorsChulwalar[2:195,]
-```
-
-5. Verify. Notice the NA's!
-```{r}
-str(tidyImportedAsIsDataChulwalar)
-str(tidyImportedPlanDataChulwalar)
-str(tidyImportedIndicatorsChulwalar)
-head(tidyImportedAsIsDataChulwalar)
-head(tidyImportedPlanDataChulwalar)
-head(tidyImportedIndicatorsChulwalar)
-summary(tidyImportedAsIsDataChulwalar)
-summary(tidyImportedPlanDataChulwalar)
-summary(tidyImportedIndicatorsChulwalar)
 ```
 
 ##Time Series Data
@@ -141,8 +121,8 @@ summary(tidyImportedIndicatorsChulwalar)
 2. Discard Year 2014 as there is not Data (NA)
 ```{r}
 tidyImportedAsIsDataChulwalar
-TotalYearlyExports <- tidyImportedAsIsDataChulwalar[85:96,]
-TotalYearlyExports <- TotalYearlyExports[c(2:7)]
+TotalYearlyExports <- tidyImportedAsIsDataChulwalar[84:97,]
+TotalYearlyExports <- TotalYearlyExports[c(1:7)]
 TotalYearlyExports
 TotalYearlyExports_vector <- c(26280011, 29609916, 32726772, 37215503, 40629676, 45408410)
 TotalYearlyExports_vector
@@ -156,7 +136,6 @@ library(fpp)
 
 ```{r}
 TotalYearlyExports_ts <- ts(TotalYearlyExports_vector, start=c(2008), end=c(2013), frequency=12)
-TotalYearlyExports_ts
 plot.ts(TotalYearlyExports_ts)
 ```
 
@@ -182,13 +161,316 @@ decompose_TotalYearlyExports_ts$seasonal
 ```
 
 ##Correlation of Imported Indicators
-See if the results above support the imported indicators
+See if the results above support the imported indicators: Indicator chosen Chage in Export Prices.
 ```{r}
 ChangeExportPrices <- tidyImportedIndicatorsChulwalar[1:12,]
 ChangeExportPrices <- ChangeExportPrices[c(2:7)]
 ChangeExportPrices
 ChangeExportPrices_ts <- ts(ChangeExportPrices, start=c(2008), end=c(2013), frequency=12)
-ChangeExportPrices_ts
+```
+
+We can observe that peaks also occurr in June for the year of 2008 and December for all other months.
+```{r}
 plot.ts(ChangeExportPrices_ts)
 ```
 
+##Proceed to Forecast
+Install required pacakges:
+```{r}
+install.packages("forecast", repos="http://cran.us.r-project.org",dependencies=TRUE)
+library(forecast)
+```
+******************************************
+
+**ARIMA forecasting model**
+
+******************************************
+1. Build the ARIMA forecasting model: the arima function takes the time series data as an input, and parameters (p, d, q), defined as follows:
+    p: The number of autoregressive terms
+    d: The number of nonseasonal differences needed for stationarity
+    q: The number of lagged forecast errors
+    
+    Some combinations are: 
+    
+    (1,0,0): This series is generally used when the data is highly auto-correlated. Here, we predict the current value using its immediate preceding value. Usually, the current value will be predicted by multiplying the previous value with a multiplicative factor plus a constant.
+    
+    (2,0,0): In this case, the current value is predicted based on the preceding two values.
+    
+    (0,1,0): This is also called a random walk model, where there is neither seasonality nor can the previous value predict the current value.
+    
+    (1,1,0): This case is used when the random walk model has a drift that can be defined by the previous value.
+    
+    (0,1,1): This method can be used when there is no seasonality or trend in the data. This is also called the simple exponential smoothening method. In this case, the error of the random walk is offset by the smoothening of the previous value.
+    
+```{r}
+a_model=arima(as.matrix(TotalYearlyExports_ts), order=c(2,0,0))
+```
+
+2. Forecast:  pass the arima model itself as a parameter to the forecast function, we also need to pass the number of future values that has to be predicted.
+```{r}
+aforecast=forecast.Arima(a_model,h=12)
+plot(aforecast)
+```
+
+3. Conclusions: We chose model 2,0,0 as seasonality is highly evident in the data and think this model is more apropiate than others. For example when we try to see how  simple exponential smoothening model will look we notice forecasted numbers appear to be less accurate: [We keep tweaking the parameters to improve accuracy].
+```{r}
+a_model=arima(as.matrix(TotalYearlyExports_ts), order=c(0,1,1))
+aforecast=forecast.Arima(a_model,h=12)
+plot(aforecast)
+```
+
+
+******************************************
+
+**Holt-Winters method**
+
+******************************************
+
+1. The HoltWinters function requires a given time series data, and the following parameters:
+    
+    alpha: The parameter of the Holt-Winters filters
+    
+    beta: This is used for the trend component; when set to false, the function will do exponential smoothening
+    
+    gamma: This is used for the seasonal component; when set to false, the nonseasonal component is fitted 
+    
+2. Here again we buil the model we think is more appropiate, in which case setting beta=TRUE to avoid doing exponential smoothering.
+```{r}
+h_model=HoltWinters(TotalYearlyExports_ts, beta=TRUE, gamma=FALSE)
+plot(h_model)
+```
+    
+3. Forecast: We pass the model that ww built to the predict function. Other parameters are: the period (for which the prediction has to be made), prediction.interval (when set to true, the lower and upper bounds of the corresponding prediction intervals are computed), and level (which is the confidence interval for the prediction).
+```{r}
+forecast <- predict(h_model, n.ahead = 12, prediction.interval = T, level = 0.1)
+plot(h_model, forecast)
+```
+
+4. Conclusion: Our chosen model looks off. It looks like after all we might need to adjust the gamma value. We decided to try one more time and notice this second attempt is more in line with historical data [We keep tweaking the parameters to improve accuracy]:
+```{r}
+h_model=HoltWinters(TotalYearlyExports_ts, beta=TRUE, gamma=0.1)
+forecast <- predict(h_model, n.ahead = 12, prediction.interval = T, level = 0.1)
+plot(h_model, forecast)
+```
+
+5. See actual forcasted values:
+```{r}
+hforecast <- as.data.frame(forecast)
+forecast_exports <- hforecast$fit
+forecast_exports <- as.data.frame(forecast_exports)
+head(forecast_exports, 10)
+```
+
+
+******************************************
+
+**Simple Exponential Smothing**
+
+******************************************
+
+"Forecasts produced using simple exponential smoothing methods are weighted averages of past observations, with the weights decaying exponentially as the observations get older".
+
+https://www.otexts.org/fpp/7
+
+
+1. First: try the model with an alpha smoothing parameter of 0.8
+
+2. Second: try the model with an alpha smoothing parameter of 0.6
+
+3. Third: all defaults
+```{r}
+fit1 <- ses(TotalYearlyExports_ts, alpha=0.8, beta=0.2, initial="simple", h=12)
+fit2 <- ses(TotalYearlyExports_ts, alpha=0.6, beta=0.2, initial="simple", h=12 )
+fit3 <- ses(TotalYearlyExports_ts, h=12 )
+plot(fit1, plot.conf=FALSE, ylab="Total Yearly Exports")
+lines(fitted(fit1), col="blue") 
+lines(fitted(fit2), col="red") 
+lines(fitted(fit3), col="green")
+lines(fit1$mean, col="blue")
+lines(fit2$mean, col="red")
+lines(fit3$mean, col="green")
+```
+
+4. Conclusion: We noticed the blue line is more accurate to our historical data (when alpha=0.8) meaning is better when more weight is giving to past values. 
+
+Here the actual predicted values: Defaults (green) gives us more optimistics values.
+```{r}
+fit1$mean
+fit2$mean
+fit3$mean
+```
+
+******************************************
+
+**Holt's Linear Trend Method**
+
+******************************************
+
+This method allows for forecasting data with a trend. The trend component observed in the historical data is pretty flat so we decided to try this model at the very last. It also uses alpha as smoothing parameter for the level and beta as the smoothing parameter for the trend. It can be either additive or exponential.
+
+1. First: try additive model with a smoothing parameter of 0.8
+
+2. Second: try an exponential model with a smoothing parameter of 0.6
+
+3. Third: all defaults
+```{r}
+fit1 <- holt(TotalYearlyExports_ts, alpha=.8, beta=0.2, initial="simple", h=12)
+fit2 <- holt(TotalYearlyExports_ts, alpha=.6, beta=0.2, initial="simple", exponential=TRUE, h=12 )
+fit3 <- holt(TotalYearlyExports_ts, h=12 )
+plot(fit1, plot.conf=FALSE, ylab="Total Yearly Exports")
+lines(fitted(fit1), col="blue") 
+lines(fitted(fit2), col="red") 
+lines(fitted(fit3), col="green") 
+lines(fit1$mean, col="blue")
+lines(fit2$mean, col="red")
+lines(fit3$mean, col="green")
+fit4 <- holt(TotalYearlyExports_ts, alpha=.8, beta=0.2, damped=TRUE, initial="simple", h=12)
+lines(fitted(fit4), col="darkgreen") 
+lines(fit4$mean, col="darkgreen")
+fit5 <- holt(TotalYearlyExports_ts, alpha=.6, beta=0.2, damped=TRUE, initial="simple", exponential=TRUE, h=12 )
+lines(fitted(fit5), col="purple") 
+lines(fit5$mean, col="purple")
+```
+
+4. Conclusion: As we could observed (and had expected), there is no trend really defined, or one that could be forecast using this model. Since the historical data shows seasonality component rather than a trend.
+
+Here the actual predicted values: Notice that both, additive and exponential models propose a negative trend. 
+```{r}
+fit1$mean
+fit2$mean
+fit3$mean
+fit4$mean
+fit5$mean
+```
+
+******************************************
+
+**Damp Trend Method**
+
+******************************************
+Often the single-most accurate forecasting method for seasonal data!
+
+
+**Damped Linear Method** It can be additive or exponentially (less conservative), and includes a damp paremeter.
+
+Here is the code we used for the damped version:
+
+fit4 <- holt(TotalYearlyExports_ts, alpha=.8, beta=0.2, damped=TRUE, initial="simple", h=12)
+lines(fitted(fit4), col="darkgreen") 
+fit4$mean
+lines(fit3$mean, col="green")
+
+fit5 <- holt(TotalYearlyExports_ts, alpha=.6, beta=0.2, damped=TRUE, initial="simple", exponential=TRUE, h=12 )
+lines(fitted(fit5), col="purple") 
+lines(fit5$mean, col="purple")
+fit5$mean
+
+Conclusion: Fit5 model is slightly better but not quite convincing when compared against historical data.
+
+**Accuracy**
+
+1. Compare the different the models:
+```{r}
+fit1$model
+fit2$model
+fit3$model
+fit4$model
+fit5$model
+```
+
+2. Verify accuracy against historical data:
+```{r}
+accuracy(fit1, TotalYearlyExports_vector)
+accuracy(fit2, TotalYearlyExports_vector)
+accuracy(fit3, TotalYearlyExports_vector)
+accuracy(fit4, TotalYearlyExports_vector)
+accuracy(fit5, TotalYearlyExports_vector)
+```
+
+3. Conclusion: Our previous findings match those obtained with the accuracy results. Notice F3(defaults) has the lowest values for ERROR in the testing Set. Also Fit5(Damped Holt's method with exponential trend) seems to have pretty low values.
+
+
+******************************************
+
+**Holt Winter Seasonal Method**
+
+******************************************
+
+This method also offers a damped version and it can be additive (seasonal variations roughly constant through the series) or exponential (seasonal variations changing proportional to the level of series). 
+
+Lastly we would like to run the Holt Winter Seasonal Method but using the hw function as seen in the module 9 videos.
+```{r}
+plot(TotalYearlyExports_ts, type="l")
+fit1 <- hw(TotalYearlyExports_ts, seasonal="additive")
+fit2 <- hw(TotalYearlyExports_ts, seasonal="multiplicative")
+plot(fit2, ylab="Total Yearly Exports", plot.conf=FALSE, type="o", fcol="white", xlab="Year", main = "Comparing Seasonal Methods")
+lines(fitted(fit1), col="red")
+lines(fitted(fit2), col="blue")
+lines(fit1$mean, col="red")
+lines(fit2$mean, col="blue")
+fit1$mean
+fit2$mean
+accuracy(fit1)
+accuracy(fit2)
+```
+
+Conclusion: At first it looks like either one of the Holt Winter Methods with seasonal component (additive or exponential) used in the cases above fits a very good forecast to what historical data looks like, however when looking closer at the results returned by the accuracy function it seems the multiplicative model is slighly better over time as the values for ERROR a lower for the Test set.
+
+
+******************************************
+
+**Comparing vs Planned Data**
+
+******************************************
+
+1. What is the best model for the export data?
+It is hard to decide. In fact we were able to obtain what seemed to b pretty good forecast numbers using various models. For example both Arimo(2,0,0) and Holt Winters Multiplicative were able to consider seasonal component as part of the parameters and thus making the results more accurate for our specific dataset.
+
+2. How do you define "best"?
+Definition of "best" is rather relative to the components observed during time series data decomposition. It appears there is no one model better than others when it comes to forecasting data, instead components such as Seasonality, Trend, etc define the needs (data requirements to be considered)  within the different parameters when conforming a specific model to used at the time of forecast. We like Arima Model in the sense that we were able to tweak the parameters to accomodate for more accurate results.  Also Holt Winters Model seemed better fit for our particular dataset.
+
+3. Looking at our actual predicted values using Holt Winters Filtering:
+```{r}
+forecast_exports
+```
+
+4. Looking at our actual predicted values using Holt Winters Multiplicative with Seasonal Component:
+```{r}
+fitted(fit2)
+```
+
+5. Compare to Planned Exports
+```{r}
+tidyImportedPlanDataChulwalar
+TotalYearlyExports_Planned <- tidyImportedPlanDataChulwalar[84:97,]
+TotalYearlyExports_Planned <- TotalYearlyExports_Planned[c(1:7)]
+TotalYearlyExports_Planned
+TotalYearlyExports_Planned_vector <- c(27883407,29387100,32780247,35224132,43947063,44152007)
+TotalYearlyExports_Planned_vector
+```
+
+6. Plot Actual Planned vs Forecast
+```{r}
+TotalYearlyExports_Planned_ts <- ts(TotalYearlyExports_Planned_vector, start=c(2008), end=c(2013), frequency=12)
+plot.ts(TotalYearlyExports_Planned_ts)
+lines(fitted(fit2), col="red")
+```
+******************************
+
+7. Coclusion: Holt Winters Multiplicative with Seasonal Component is our best model. Its Forecast values, although a bit more positive, are much closer to those planned. 
+```{r}
+fit2$model
+```
+
+
+******************************************
+
+**Additional Anaylisis**
+
+******************************************
+Further analysis on this case can be found on https://github.com/kkillion43/Unit10CaseStudy2
+
+
+
+
+*R Data Science Essentials, Ravindran Sharan Kumar, Raja B. Koushik, Packt Publishing, January 2016*
